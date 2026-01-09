@@ -1,26 +1,23 @@
-import http.server
-import socketserver
 import requests
+from flask import Flask, Response
 
-PORT = 8000
+app = Flask(__name__)
 
-class MyHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        try:
-            # Récupère les chaînes directement
-            target_url = "https://www2.vavoo.to/live/index?f=fr"
-            headers = {'User-Agent': 'VAVOO/2.6'}
-            r = requests.get(target_url, headers=headers, timeout=10)
-            
-            self.send_response(200)
-            self.send_header('Content-type', 'text/plain; charset=utf-8')
-            self.end_headers()
-            self.wfile.write(r.text.encode('utf-8'))
-        except Exception as e:
-            self.send_response(500)
-            self.end_headers()
-            self.wfile.write(f"Erreur : {str(e)}".encode())
+# L'adresse vers la source des chaînes
+VAVOO_URL = "https://www2.vavoo.to/live2/index"
 
-socketserver.TCPServer.allow_reuse_address = True
-with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
-    httpd.serve_forever()
+@app.route('/')
+def get_playlist():
+    try:
+        # On récupère les données de Vavoo
+        response = requests.get(VAVOO_URL)
+        data = response.text
+        
+        # On renvoie le contenu en format M3U pour VLC
+        return Response(data, mimetype='text/plain')
+    except Exception as e:
+        return f"Erreur lors de la récupération : {str(e)}", 500
+
+if __name__ == "__main__":
+    # Koyeb utilise le port 8000 par défaut
+    app.run(host='0.0.0.0', port=8000)
