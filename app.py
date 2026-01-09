@@ -1,15 +1,16 @@
 import requests
 from flask import Flask, Response, request, jsonify, redirect
 
-# Ligne cruciale pour corriger l'erreur de 19:02
+# Correction de l'erreur de 19h02 : Initialisation de l'application
 app = Flask(__name__)
 
-# CONFIGURATION : Date en 2030 pour corriger l'erreur "Expired"
+# CONFIGURATION : Date fixée en 2030 pour éviter l'erreur "Expired"
 USER_DB = {
     "nathan": {"password": "2026", "timestamp": 1924898400}
 }
 
 def get_fresh_auth():
+    """Récupère la clé de déblocage pour la vidéo."""
     try:
         res = requests.get("https://www2.vavoo.to/live2/index", timeout=10)
         data = res.json()
@@ -22,6 +23,7 @@ def get_fresh_auth():
 
 @app.route('/player_api.php')
 def xtream_api():
+    """API pour IPTV Smarters et autres lecteurs."""
     username = request.args.get('username')
     password = request.args.get('password')
     
@@ -32,7 +34,7 @@ def xtream_api():
         "user_info": {
             "auth": 1,
             "status": "Active",
-            "exp_date": "1924898400", # Décembre 2030
+            "exp_date": "1924898400", 
             "username": username
         },
         "server_info": {"url": "koyeb.app", "port": "80"}
@@ -40,6 +42,7 @@ def xtream_api():
 
 @app.route('/live/<user>/<password>/<stream_id>.ts')
 def stream_handler(user, password, stream_id):
+    """Gère la lecture de la vidéo avec redirection."""
     if user not in USER_DB or USER_DB[user]['password'] != password:
         return "Accès Refusé", 403
     token = get_fresh_auth()
@@ -48,6 +51,7 @@ def stream_handler(user, password, stream_id):
 @app.route('/')
 @app.route('/get.php')
 def m3u_output():
+    """Génère la liste de chaînes professionnelle."""
     try:
         res = requests.get("https://www2.vavoo.to/live2/index")
         channels = res.json()
