@@ -1,22 +1,29 @@
-import os, sys
-from time import sleep
+import os, sys, time
 
-# Ajout du chemin pour trouver les modules
-rp = os.path.normpath(os.path.dirname(__file__))
-sys.path.append(rp)
-sys.path.append(os.path.join(rp, 'vxparser'))
+# Ajoute les bons chemins pour que Python trouve tout
+rp = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, rp)
 
-import utils.common as com
-import services
+try:
+    import services
+    from utils import common as com
+except ImportError as e:
+    print(f"Erreur d'importation : {e}")
 
 def main():
-    # Force l'initialisation sans menu
-    services.handler('init')
-    print("Serveur IPTV actif...")
-    # Boucle infinie pour garder le serveur allumé
+    print("=== DEMARRAGE DU SERVEUR ===")
+    try:
+        # On lance l'initialisation de base
+        services.handler('init')
+        print("=== SERVEUR IPTV LIVE ===")
+    except Exception as e:
+        print(f"Erreur au lancement : {e}")
+    
+    # Garde le serveur allumé
     while True:
-        sleep(60)
+        time.sleep(60)
 
 if __name__ == "__main__":
     main()
+
 
