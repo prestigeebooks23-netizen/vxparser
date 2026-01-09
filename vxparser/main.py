@@ -3,7 +3,15 @@ import http.server
 import socketserver
 import sys
 
-# On force Python à regarder dans le dossier courant
+# Simulation des attributs manquants pour éviter l'erreur circular import
+class MockJobs:
+    def __init__(self): self.running = False
+import types
+mock_module = types.ModuleType('jobs')
+mock_module.jobs = MockJobs()
+sys.modules['jobs'] = mock_module
+
+# Ajout du chemin des fichiers
 path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(path)
 
@@ -13,31 +21,27 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if '/vavoo' in self.path:
             try:
-                # On importe services localement pour éviter la boucle
+                # Importation forcée
                 import services
+                # On essaie de récupérer la liste des chaînes
+                output = services.handler('init')
                 
-                # On prépare la réponse
                 self.send_response(200)
                 self.send_header('Content-type', 'text/plain; charset=utf-8')
                 self.end_headers()
-                
-                # On récupère les données
-                # On utilise 'init' car c'est la fonction standard de vxparser
-                output = services.handler('init')
-                
                 self.wfile.write(str(output).encode('utf-8'))
             except Exception as e:
-                self.send_response(500)
+                self.send_response(200) # On envoie quand même 200 pour voir l'erreur
                 self.end_headers()
-                self.wfile.write(f"Erreur script : {str(e)}".encode())
+                self.wfile.write(f"Diagnostic : {str(e)}".encode())
         else:
             super().do_GET()
 
-# Lancement propre
 socketserver.TCPServer.allow_reuse_address = True
 with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
-    print(f"Serveur IPTV prêt sur le port {PORT}")
+    print(f"Serveur actif")
     httpd.serve_forever()
+
 
 
 
